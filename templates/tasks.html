@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Minhas Tarefas</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f2f2f2; text-align: left; }
+    .actions { display: flex; gap: 8px; }
+    form { display: inline; margin: 0; }
+  </style>
+</head>
+<body>
+  <h1>Minhas Tarefas</h1>
+
+  <p>
+    <a href="{{ url_for('create_task') }}">+ Nova Tarefa</a> |
+    <a href="{{ url_for('list_users') }}">Usuários</a> |
+    <a href="{{ url_for('index') }}">Início</a>
+  </p>
+
+  {% if tasks %}
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Título</th>
+        <th>Descrição</th>
+        <th>Status</th>
+        <th>Usuário</th>
+        <th>Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for t in tasks %}
+      <tr>
+        <td>{{ t.id }}</td>
+        <td>{{ t.title }}</td>
+        <td>{{ t.description or "-" }}</td>
+        <td>{{ t.status }}</td>
+        <td>{{ t.user.nome }}</td>
+        <td class="actions">
+          <!-- Concluir/Desfazer -->
+          <form action="{{ url_for('update_task_status', task_id=t.id) }}" method="POST">
+            <button type="submit">
+              {% if t.status == "Pendente" %}Concluir{% else %}Desfazer{% endif %}
+            </button>
+          </form>
+
+          <!-- Excluir -->
+          <form action="{{ url_for('delete_task', task_id=t.id) }}" method="POST" onsubmit="return confirm('Excluir esta tarefa?')">
+            <button type="submit">Excluir</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p>Nenhuma tarefa cadastrada.</p>
+  {% endif %}
+</body>
+</html>

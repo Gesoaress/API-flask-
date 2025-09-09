@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Editar Usuário</title>
+</head>
+<body>
+    <h1>Editar Usuário</h1>
+    <form method="POST">
+        <label>Nome:</label>
+        <input type="text" name="nome" value="{{ user.nome }}" required><br><br>
+
+        <label>Email:</label>
+        <input type="email" name="email" value="{{ user.email }}" required><br><br>
+
+        <button type="submit">Salvar Alterações</button>
+    </form>
+    <p><a href="{{ url_for('list_users') }}">Voltar</a></p>
+</body>
+</html>

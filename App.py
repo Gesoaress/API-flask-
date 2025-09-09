@@ -1,67 +1,42 @@
-from flask import Flask, request, jsonify
-
-app = Flask(__name__)
-
-# Estrutura de dados em memória
-usuarios = []
-current_id = 1
-
-# CREATE - adicionar usuário
-@app.route('/users', methods=['POST'])
-def criar_usuario():
-    global current_id
-    dados = request.json
-
-    if not dados or "nome" not in dados or "email" not in dados:
-        return jsonify({"error": "Dados inválidos. Envie 'nome' e 'email'."}), 400
-
-    novo_usuario = {
-        "id": current_id,
-        "nome": dados["nome"],
-        "email": dados["email"]
-    }
-    usuarios.append(novo_usuario)
-    current_id += 1
-
-    return jsonify(novo_usuario), 201
+from flask import Flask, render_template
+import os
+from extensions import db
+from controllers.user_controller import UserController
+from controllers.task_controller import TaskController
 
 
-# READ ALL - listar todos os usuários
-@app.route('/users', methods=['GET'])
-def listar_usuarios():
-    return jsonify(usuarios), 200
+def create_app():
+    app = Flask(__name__)
 
+    BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE_DIR, "users.db")
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-# READ SINGLE - buscar usuário por ID
-@app.route('/users/<int:user_id>', methods=['GET'])
-def buscar_usuario(user_id):
-    for usuario in usuarios:
-        if usuario["id"] == user_id:
-            return jsonify(usuario), 200
-    return jsonify({"error": "Usuário não encontrado"}), 404
+    db.init_app(app)
 
+    with app.app_context():
+        from models.user import User
+        from models.task import Task   # <— importante
+        db.create_all()
 
-# UPDATE - atualizar usuário
-@app.route('/users/<int:user_id>', methods=['PUT'])
-def atualizar_usuario(user_id):
-    dados = request.json
-    for usuario in usuarios:
-        if usuario["id"] == user_id:
-            usuario["nome"] = dados.get("nome", usuario["nome"])
-            usuario["email"] = dados.get("email", usuario["email"])
-            return jsonify(usuario), 200
-    return jsonify({"error": "Usuário não encontrado"}), 404
+    @app.route("/")
+    def index():
+        return render_template("index.html")
 
+    # Rotas de Usuários
+    app.add_url_rule("/users", view_func=UserController.list_users, methods=["GET"], endpoint="list_users")
+    app.add_url_rule("/users/new", view_func=UserController.create_user, methods=["GET", "POST"], endpoint="create_user")
+    app.add_url_rule("/users/edit/<int:user_id>", view_func=UserController.edit_user, methods=["GET", "POST"], endpoint="edit_user")
+    app.add_url_rule("/users/delete/<int:user_id>", view_func=UserController.delete_user, methods=["POST"], endpoint="delete_user")
 
-# DELETE - remover usuário
-@app.route('/users/<int:user_id>', methods=['DELETE'])
-def deletar_usuario(user_id):
-    for usuario in usuarios:
-        if usuario["id"] == user_id:
-            usuarios.remove(usuario)
-            return jsonify({"message": "Usuário excluído com sucesso"}), 200
-    return jsonify({"error": "Usuário não encontrado"}), 404
+    # Rotas de Tarefas
+    app.add_url_rule("/tasks", view_func=TaskController.list_tasks, methods=["GET"], endpoint="list_tasks")
+    app.add_url_rule("/tasks/new", view_func=TaskController.create_task, methods=["GET", "POST"], endpoint="create_task")
+    app.add_url_rule("/tasks/update/<int:task_id>", view_func=TaskController.update_task_status, methods=["POST"], endpoint="update_task_status")
+    app.add_url_rule("/tasks/delete/<int:task_id>", view_func=TaskController.delete_task, methods=["POST"], endpoint="delete_task")
+    
+    return app
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
+    app = create_app()
     app.run(debug=True)

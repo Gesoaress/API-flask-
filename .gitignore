@@ -1,0 +1,11 @@
+# Ambiente / cache
+venv/
+__pycache__/
+*.pyc
+
+# Config/segredos
+.env
+instance/
+
+# Banco local
+*.db
